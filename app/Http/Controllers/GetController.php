@@ -51,13 +51,15 @@ class GetController extends Controller
         $items_per_page = 250;
         $next_page = '';
         $last_page = false;
-                 
+        sleep(1);  
         $countRefund  = self::__curl($baseUrl,$username,$password);
+        //print_r($countRefund);die;
         $totalRefund = $countRefund->count;
         $pageRefund = ceil($totalRefund/$items_per_page);
         //echo $pageRefund;die;
         $k=0;$customerData = array();
               while(!$last_page) {
+
                   $responseData = array();
                     $url = 'https://a193e7a4cc8b59ed17f948458f94f824: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@lord-jameson-dog.myshopify.com/admin/api/2021-01/customers.json?limit=' . $items_per_page . $next_page; 
                  
@@ -96,7 +98,7 @@ class GetController extends Controller
                     $k++;
                     $responseData = json_decode($result);
                     //echo "<PRE>";print_r($responseData);die;
-                    if($responseData->customers){
+                    if(isset($responseData->customers)){
                        for($l = 0;$l<count($responseData->customers);$l++){
                           if(isset($responseData->customers[$l]->id)){
                               array_push($customerData,$responseData->customers[$l]);
@@ -115,7 +117,7 @@ class GetController extends Controller
                     $lastorderData = self::__curl($baseUrl,$this->username,$this->password);
                 }
 
-                if(!empty($lastorderData)){
+                if(isset($lastorderData->order)){
                  // print_r($lastorderData);die;
                     $last_order = $lastorderData->order->created_at;
                 }
@@ -148,12 +150,13 @@ class GetController extends Controller
                   $avgAmount = 0;
                 }
                 $customer = DB::select('select * from tbl_customer where customer_id ='.$customerData[$i]->id);
-
+                echo trim($customerData[$i]->tags);die;
                   if(count($customer) == 0){
-                      $values = array('customer_id' => $customerData[$i]->id,'first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'customer_created_at'=>$customerData[$i]->created_at,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>$customerData[$i]->tags);
+                    
+                      $values = array('customer_id' => $customerData[$i]->id,'first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'customer_created_at'=>$customerData[$i]->created_at,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>trim($customerData[$i]->tags));
                       DB::table('tbl_customer')->insert($values);
                   }else{
-                    $updateArr = array('first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>$customerData[$i]->tags);
+                    $updateArr = array('first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>trim($customerData[$i]->tags));
                        DB::table('tbl_customer')->where('customer_id', $customerData[$i]->id)->update($updateArr);
                   }   
               }
@@ -260,7 +263,7 @@ class GetController extends Controller
             $oldDateS = date('m/d/Y', strtotime('-1 month', strtotime($startDate)));
             $oldDateE = date('m/d/Y', strtotime('-1 month', strtotime($endDate)));
 
-
+            echo 'SELECT * from tbl_customer where FIND_IN_SET("'.$_POST['tags'].'",customer_tag) and date(customer_created_at) >= "'.date('Y-m-d',strtotime($_POST['startDate'])).'" and date(customer_created_at) <= "'.date('Y-m-d',strtotime($_POST['endDate'])).'"';die;
             $databyTag = DB::select('SELECT * from tbl_customer where FIND_IN_SET("'.$_POST['tags'].'",customer_tag) and date(customer_created_at) >= "'.date('Y-m-d',strtotime($_POST['startDate'])).'" and date(customer_created_at) <= "'.date('Y-m-d',strtotime($_POST['endDate'])).'"');
 
             $databyTagOld = DB::select('SELECT * from tbl_customer where FIND_IN_SET("'.$_POST['tags'].'",customer_tag) and date(customer_created_at) >= "'.date('Y-m-d',strtotime($oldDateS)).'" and date(customer_created_at) <= "'.date('Y-m-d',strtotime($oldDateE)).'"');

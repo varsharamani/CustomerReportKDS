@@ -259,6 +259,7 @@ $(document).ready(function() {
 } );
 
 $(function() {
+
 	//$('#daterange').val($('#date').val());
 	  var dS = $('#sdate').val();
 	  var dE = $('#edate').val();
@@ -299,24 +300,29 @@ function showContent(type){
         $('#responses-tab').addClass('active');
     }
 }
-
+tagArr = [];
 function getTotal(val){
 	var url = $('#getTotal').val();
 	var startDate = $('#sdate').val();
 	var endDate = $('#edate').val();
 	
 	if(val !== 'Wholesale' && val !== 'DTC'){
-		$.ajax({
-	        url: url,
-	        type: "POST",
-	        dataType: "JSON",
-	        data: {tags:val,startDate:startDate,endDate:endDate,"_token": "{{ csrf_token() }}"},
-	        success: function (data) {
-	        	$('#addTags').append('<br/><label>Total '+val+': '+data.total+'</label> , <label>Total '+val+' Old : '+data.totalOld+'</label>');
-	        	$('#tagsChart').append('<figure class="highcharts-figure"><div id="'+data.id+'"></div></figure>');	
-	        	startsChart1(data.seriesDataCus,data.tStarts,data.id,val);
-	        }
-	    });
+		if ($.inArray(val, tagArr) != -1){
+		}else{
+			tagArr.push(val);
+			$.ajax({
+		        url: url,
+		        type: "POST",
+		        dataType: "JSON",
+		        data: {tags:val,startDate:startDate,endDate:endDate,"_token": "{{ csrf_token() }}"},
+		        success: function (data) {
+		        	$('#addTags').append('<br/><label>Total '+val+': '+data.total+'</label> , <label>Total '+val+' Old : '+data.totalOld+'</label>');
+		        	$('#tagsChart').append('<figure class="highcharts-figure"><div id="'+data.id+'"></div></figure>');	
+		        	startsChart1(data.seriesDataCus,data.tStarts,data.id,val);
+		        }
+		    });
+
+		}
 	}
 }
 
