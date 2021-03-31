@@ -10,8 +10,6 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use Auth;
-//set_time_limit(0);
-//ini_set('memory_limit',-1);
 class GetController extends Controller
 {
     /**
@@ -44,26 +42,21 @@ class GetController extends Controller
         return $responseArr;
     }
 
-   
-
     // get Product List
 
-   
     public function index(){
-      //echo "[START TIME ".date('Y-m-d H:i:s')."] <br/>";
-      set_time_limit(0);
-      ini_set('memory_limit',-1); 
         $username='a193e7a4cc8b59ed17f948458f94f824';
         $password = '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';
         $baseUrl = 'https://lord-jameson-dog.myshopify.com/admin/api/2021-01/customers/count.json';
         $items_per_page = 250;
         $next_page = '';
         $last_page = false;
+        sleep(1);  
         $countRefund  = self::__curl($baseUrl,$username,$password);
         //print_r($countRefund);die;
         $totalRefund = $countRefund->count;
         $pageRefund = ceil($totalRefund/$items_per_page);
-        #echo $pageRefund;die;
+        //echo $pageRefund;die;
         $k=0;$customerData = array();
               while(!$last_page) {
 
@@ -97,6 +90,7 @@ class GetController extends Controller
                     } else {
                         $last_page = true; // if missing "link" parameter - there's only one page of results = last_page
                     }
+                   
                     if($pageRefund==$k){
                         $last_page = true;
                         break;
@@ -155,37 +149,20 @@ class GetController extends Controller
                 {
                   $avgAmount = 0;
                 }
-                $tags = '';
-                if(isset($customerData[$i]->tags) && !empty($customerData[$i]->tags)){
-                   // echo $customerData[$i]->tags;die;
-                   $tagArray = array();
-                   $tagArray = explode(", ",$customerData[$i]->tags);
-                    for($c=0;$c<count($tagArray);$c++){
-                      if(!empty($tagArray[$c])){
-                        $tags.=$tagArray[$c].',';
-                     }
-                    }
-                //  echo $tags;die;
-                }
-
                 $customer = DB::select('select * from tbl_customer where customer_id ='.$customerData[$i]->id);
-               // echo "hii";
-               // echo count($customer);die;
-                //echo trim($customerData[$i]->tags);die;
+                echo trim($customerData[$i]->tags);die;
                   if(count($customer) == 0){
                     
-                      $values = array('customer_id' => $customerData[$i]->id,'first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'customer_created_at'=>$customerData[$i]->created_at,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>rtrim($tags,','));
+                      $values = array('customer_id' => $customerData[$i]->id,'first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'customer_created_at'=>$customerData[$i]->created_at,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>trim($customerData[$i]->tags));
                       DB::table('tbl_customer')->insert($values);
                   }else{
-                    $updateArr = array('first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>rtrim($tags,','));
-                   // print_r($updateArr);die;
+                    $updateArr = array('first_name' => $customerData[$i]->first_name,'last_name'=>$customerData[$i]->last_name,'address'=>$add,'mobileno'=>$customerData[$i]->phone,'email'=>$customerData[$i]->email,'average_amount'=>round($avgAmount,'2'),'total_order'=>$customerData[$i]->orders_count,'last_order_date'=>$last_order,'customer_tag'=>trim($customerData[$i]->tags));
                        DB::table('tbl_customer')->where('customer_id', $customerData[$i]->id)->update($updateArr);
                   }   
               }
-              // echo "[END TIME ".date('Y-m-d H:i:s')."] <br/>";
     }
 
-     public function getCustomer(){
+    public function getCustomer(){
         $startDate = date('m/d/Y',strtotime("-30 days"));
         $endDate   = date('m/d/Y',strtotime("now"));
 
@@ -214,7 +191,7 @@ class GetController extends Controller
         echo view ('customer_report',['customerData' => $customer,'startDate'=>$startDate,'endDate'=>$endDate,'allCustomer'=>$allCustomer,'allDTC'=>$allDTC,'allWholesale'=>$allWholesale,'allCustomerOld'=>$allCustomerOld,'allDTCOld'=>$allDTCOld,'allWholesaleOld'=>$allWholesaleOld,'allCustomerTags'=>$allCustomerTags,'tab'=>'1']);
     }
 
-   	public function getCustomerFilter(){
+    public function getCustomerFilter(){
       $dateAtt = array();
         $dateAtt = explode(" - ",$_POST['daterange']);
 
@@ -286,6 +263,7 @@ class GetController extends Controller
             $oldDateS = date('m/d/Y', strtotime('-1 month', strtotime($startDate)));
             $oldDateE = date('m/d/Y', strtotime('-1 month', strtotime($endDate)));
 
+            echo 'SELECT * from tbl_customer where FIND_IN_SET("'.$_POST['tags'].'",customer_tag) and date(customer_created_at) >= "'.date('Y-m-d',strtotime($_POST['startDate'])).'" and date(customer_created_at) <= "'.date('Y-m-d',strtotime($_POST['endDate'])).'"';die;
             $databyTag = DB::select('SELECT * from tbl_customer where FIND_IN_SET("'.$_POST['tags'].'",customer_tag) and date(customer_created_at) >= "'.date('Y-m-d',strtotime($_POST['startDate'])).'" and date(customer_created_at) <= "'.date('Y-m-d',strtotime($_POST['endDate'])).'"');
 
             $databyTagOld = DB::select('SELECT * from tbl_customer where FIND_IN_SET("'.$_POST['tags'].'",customer_tag) and date(customer_created_at) >= "'.date('Y-m-d',strtotime($oldDateS)).'" and date(customer_created_at) <= "'.date('Y-m-d',strtotime($oldDateE)).'"');
@@ -308,7 +286,6 @@ class GetController extends Controller
                      $startDate1 = date('Y-m-d',strtotime($value->customer_created_at));
                      $startDate11 = date('Y-m-d',strtotime($startDate1." -1 Months"));
                      $prevDate = explode("-",$startDate11);
-                    // print_r($prevDate);die;
                      $array[1] = $prevDate[1];
                      $array[0] = $prevDate[0];
               
@@ -321,21 +298,16 @@ class GetController extends Controller
             $new_chart_data = rtrim($new_chart_data,' ,');
 
             $old_chart_data = '';
-            $ototalStarts = array();
-            $oStarts = 5;
             foreach($oldstartsData as $key1 => $value1){
                 $strOld = ''; 
                 $array_old=explode("-",$value1->customer_created_at); 
                 $str = 'Date.UTC('.$array_old[0].','.$array_old[1].','.$array_old[2].')';
                 $old_chart_data .= "[".$str.",".$value1->status."], ";
-                 array_push($ototalStarts,$value1->status);
-                $oStarts = max($ototalStarts);
-
             }
             $old_chart_data = rtrim($old_chart_data,' ,');
 
             $seriesDataCus = '';
-            $seriesDataCus.='[{ name:"Current Period", data: ['.$new_chart_data.'] }, { name:"Previous Period", data: ['.$old_chart_data.'] }]';
+            $seriesDataCus.='[{ name:"Specified Period", data: ['.$new_chart_data.'] }, { name:"Past Period", data: ['.$old_chart_data.'] }]';
 
             //echo "<PRE>";print_r($allWholesale);die;
             if(!empty($databyTag)){
@@ -348,12 +320,11 @@ class GetController extends Controller
             }else{
                 $totalOld = '0';
             }
-            //echo $tStarts.'bn'.$oStarts;die;
             $data = array();
             $data['total'] = $total;
             $data['totalOld'] = $totalOld;
             $data['seriesDataCus'] = $seriesDataCus;
-            $data['tStarts'] = max($tStarts,$oStarts);
+            $data['tStarts'] = $tStarts;
             $data['id'] = trim(str_replace(" ","-",$_POST['tags']));
             echo json_encode($data);exit();
         }
@@ -396,20 +367,16 @@ class GetController extends Controller
         $new_chart_data = rtrim($new_chart_data,' ,');
 
         $old_chart_data = '';
-        $oldtotalStarts = array();
-        $oldtStarts = 5;
         foreach($oldstartsData as $key1 => $value1){
             $strOld = ''; 
             $array_old=explode("-",$value1->customer_created_at); 
             $str = 'Date.UTC('.$array_old[0].','.$array_old[1].','.$array_old[2].')';
             $old_chart_data .= "[".$str.",".$value1->status."], ";
-            array_push($oldtotalStarts,$value1->status);
-            $oldtStarts = max($oldtotalStarts);
         }
         $old_chart_data = rtrim($old_chart_data,' ,');
 
         $seriesDataCus = '';
-        $seriesDataCus.='[{ name:"Current Period", data: ['.$new_chart_data.'] }, { name:"Previous Period", data: ['.$old_chart_data.'] }]';
+        $seriesDataCus.='[{ name:"Specified Period", data: ['.$new_chart_data.'] }, { name:"Past Period", data: ['.$old_chart_data.'] }]';
 
         //DTC
         $newDTCData = array();
@@ -441,20 +408,16 @@ class GetController extends Controller
         $new_chart_dataDTC = rtrim($new_chart_dataDTC,' ,');
 
         $old_chart_dataDTC = '';
-        $oldtotalDTC = array();
-        $oldtStartsDTC = 5;
         foreach($oldDTCData as $key1 => $value1){
             $strOld = ''; 
             $array_old=explode("-",$value1->customer_created_at); 
             $str = 'Date.UTC('.$array_old[0].','.$array_old[1].','.$array_old[2].')';
             $old_chart_dataDTC .= "[".$str.",".$value1->status."], ";
-            array_push($oldtotalDTC,$value1->status);
-            $oldtStartsDTC = max($oldtotalDTC);
         }
         $old_chart_dataDTC = rtrim($old_chart_dataDTC,' ,');
 
         $seriesDataDTC = '';
-        $seriesDataDTC.='[{ name:"Current Period", data: ['.$new_chart_dataDTC.'] }, { name:"Previous Period", data: ['.$old_chart_dataDTC.'] }]';
+        $seriesDataDTC.='[{ name:"Specified Period", data: ['.$new_chart_dataDTC.'] }, { name:"Past Period", data: ['.$old_chart_dataDTC.'] }]';
 
         //Wholesale
       
@@ -487,29 +450,25 @@ class GetController extends Controller
         $new_chart_dataWholesale = rtrim($new_chart_dataWholesale,' ,');
 
         $old_chart_dataWholesale = '';
-        $oldtotalWholesale = array();
-        $oldtStartsWholesale = 5;
         foreach($oldWholesaleData as $key1 => $value1){
             $strOld = ''; 
             $array_old=explode("-",$value1->customer_created_at); 
             $str = 'Date.UTC('.$array_old[0].','.$array_old[1].','.$array_old[2].')';
             $old_chart_dataWholesale .= "[".$str.",".$value1->status."], ";
-            array_push($oldtotalWholesale,$value1->status);
-            $oldtStartsWholesale = max($oldtotalWholesale);
         }
         $old_chart_dataDTC = rtrim($old_chart_dataDTC,' ,');
 
         $seriesDataWholesale = '';
-        $seriesDataWholesale.='[{ name:"Current Period", data: ['.$new_chart_dataWholesale.'] }, { name:"Previous Period", data: ['.$old_chart_dataWholesale.'] }]';
+        $seriesDataWholesale.='[{ name:"Specified Period", data: ['.$new_chart_dataWholesale.'] }, { name:"Past Period", data: ['.$old_chart_dataWholesale.'] }]';
 
 
             $data = array();
             $data['seriesDataCus'] = $seriesDataCus;
-            $data['tStarts'] = max($tStarts,$oldtStarts);
+            $data['tStarts'] = $tStarts;
             $data['seriesDataDTC'] = $seriesDataDTC;
-            $data['tStartsDTC'] = max($tStartsDTC,$oldtStartsDTC);
+            $data['tStartsDTC'] = $tStartsDTC;
             $data['seriesDataWholesale'] = $seriesDataWholesale;
-            $data['tStartsWholesale'] = max($tStartsWholesale,$oldtStartsWholesale);
+            $data['tStartsWholesale'] = $tStartsWholesale;
             echo json_encode($data);exit();
         }
     }

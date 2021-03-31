@@ -12,6 +12,8 @@
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+	<link rel="stylesheet" type="text/css" href="{{ asset('css/style.css') }}">
+
 	<style>
 		div.dataTables_wrapper div.dataTables_length select {
 			width:60px;
@@ -81,7 +83,7 @@
     <input type="hidden" id="edate" value="<?php echo $endDate; ?>">
 	<input type="hidden" value="{{ Url('/getTotalTags') }}" id="getTotal">
 	<input type="hidden" value="{{ Url('/getMapData') }}" id="getMapData">
-	<div  style="padding-left: 10px;padding-right: 40px;">
+	<div class="main-wrapper-ljr">
 		<?php if(Session::has('msg')){ ?>
 			<div class="alert-msg" id="msg">
 				<div class="success-msg"><?= Session::get('msg'); ?></div>
@@ -95,141 +97,185 @@
          		$tab1 = '';
          		$tab2 = 'active';
          	} 
-         	?>
-		 <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item ">
-                <a class="nav-link <?php echo $tab1; ?>" id="analytics-tab" data-toggle="tab" href="javascript:void(0);" role="tab" aria-controls="analytics" aria-selected="true" onclick="showContent(1);"><span>Dashboard</span></a>
-            </li>
-           <li class="nav-item">
-                <a class="nav-link <?php echo $tab2; ?>" id="responses-tab" data-toggle="tab" href="javascript:void(0);" role="tab" aria-controls="responses" aria-selected="false" onclick="showContent(2);"><span>Customer Report</span></a>
-            </li>
-        </ul>
-        <div class="tab-content" id="myTabContent"> 	
-            <div class="tab-pane fade show <?php echo $tab1; ?>" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
-                <div class="pt-content">
-                	<h5>Filter By :</h5> 
-					<form action="{{ Url('/Filter') }}" method="POST">
-						@csrf
-	                	<div class="row" style="padding-left: 10px;">
-							<div class="col-md-2">
-								<input type="text" class="form-control" name="daterange" id="daterange1" onchange="myFunction()"/>
-								<input type="hidden" name="tab" value="1">
+        ?>
+		
+		<div class="row">
+			<div class="col-md-12">
+				<!-- tabs -->
+				<ul class="nav nav-tabs" id="myTab" role="tablist">
+					<li class="nav-item ">
+						<a class="nav-link <?php echo $tab1; ?>" id="analytics-tab" data-toggle="tab" href="javascript:void(0);" role="tab" aria-controls="analytics" aria-selected="true" onclick="showContent(1);"><span>Dashboard</span></a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link <?php echo $tab2; ?>" id="responses-tab" data-toggle="tab" href="javascript:void(0);" role="tab" aria-controls="responses" aria-selected="false" onclick="showContent(2);"><span>Customer Report</span></a>
+					</li>
+				</ul>
+				<!-- End of tabs -->
+				<!-- Tab Content -->
+				<div class="tab-content" id="myTabContent"> 	
+					<div class="tab-pane fade show <?php echo $tab1; ?>" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+						<div class="pt-content">
+							<div class="filter-date">
+								<h5>Filter By Date:</h5>
+								<form action="{{ Url('/Filter') }}" method="POST">
+									@csrf
+									<div class="flex-search">
+										<div class="search-control">
+											<input type="text" class="form-control" name="daterange" id="daterange1" onchange="myFunction()"/>
+											<input type="hidden" name="tab" value="1">
+										</div>
+										<div class="button-control">
+											<input class="btn btn-info" type="submit" value="Submit">
+										</div>
+									</div>
+								</form>
 							</div>
-							<div class="col-md-2">
-								<input class="btn btn-info" type="submit" value="Submit">
+							
+							<div class="filter-tags">
+								<h5>Filter By Tags:</h5>
+			 					<div class="tags-fill"> 
+								 	<?php //echo "<PRE>";print_r($allCustomerTags);die; 
+										$alldata = array();
+										for($i=0;$i<count($allCustomerTags);$i++){
+											$fruits_ar = array();
+											$fruits_ar = explode(',',$allCustomerTags[$i]->customer_tag);
+											for($j=0;$j<count($fruits_ar);$j++){
+												if(!empty($fruits_ar[$j])){
+													array_push($alldata,trim($fruits_ar[$j]));
+												}
+											}
+										}
+										$alldata = array_unique($alldata);
+										$allFTags = array_values($alldata);
+										//echo "<PRE>";print_r(array_values($alldata));die;
+									?>
+									<?php $i=1; for($p=0;$p<count($allFTags);$p++){ ?>
+										<button type="button" class="btn btn-light" onclick="getTotal('<?php echo $allFTags[$p]; ?>');">{{ $allFTags[$p] }}</button> 
+									<?php }  ?> 
+								</div>
 							</div>
-
+							<div class="button-control">
+								<input class="btn btn-info" type="button" value="Reset" onclick="resetData();">
+							</div>
+							<br/>
+							<div class="tag-box">
+								<div id="addTags" class="row">
+									<div class="col-xl-3 col-lg-4 col-md-6 col-tagbox">
+										<div class="tags-view">
+											<h3>Total Customer</h3>
+											<div class="tag-preiod">
+												<span class="old-period"> <b>{{ count($allCustomerOld) }}</b> <small>previous period</small> </span>
+												<span class="cc-period"> <b>{{ count($allCustomer) }}</b> <small>Current period</small> </span>
+											</div>
+										</div>
+									</div>
+									<div class="col-xl-3 col-lg-4 col-md-6 col-tagbox">
+										<div class="tags-view">
+											<h3>Total DTC</h3>
+											<div class="tag-preiod">
+												<span class="old-period"> <b>{{ count($allDTCOld) }}</b> <small>previous period</small> </span>
+												<span class="cc-period"> <b>{{ count($allDTC) }}</b> <small>Current period</small> </span>
+											</div>
+										</div>
+									</div>
+									<div class="col-xl-3 col-lg-4 col-md-6 col-tagbox">
+										<div class="tags-view">
+											<h3>Total Wholesale</h3>
+											<div class="tag-preiod">
+												<span class="old-period"> <b>{{ count($allWholesaleOld) }}</b> <small>previous period</small> </span>
+												<span class="cc-period"> <b>{{ count($allWholesale) }}</b> <small>Current period</small> </span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="tag-chart">
+								<div id="tagsChart" class="row">
+									<div class="col-xl-6 col-chart">
+										<figure class="highcharts-figure">
+											<div id="TCustomer-chart"></div>
+										</figure>
+									</div>
+									<div class="col-xl-6 col-chart">
+										<figure class="highcharts-figure">
+											<div id="TDTC-chart"></div>
+										</figure>
+									</div>
+									<div class="col-xl-6 col-chart">
+										<figure class="highcharts-figure">
+											<div id="TWholesale-chart"></div>
+										</figure>
+									</div>
+								</div>
+							</div>
 						</div>
-					</form>
-                	<div class="container">
-                    	<div class="row">
-							<div class="col-md-6">
-								<label>Total Customer : {{ count($allCustomer) }}</label> , <label>Total Customer Old : {{ count($allCustomerOld) }}</label><br/>
-								<label>Total DTC : {{ count($allDTC) }} </label> , <label>Total DTC Old : {{ count($allDTCOld) }}</label><br/>
-								<label>Total Wholesale : {{ count($allWholesale) }}</label> , <label>Total Wholesale Old : {{ count($allWholesaleOld) }}</label>
-								<div id="addTags"></div>
-							</div>  
-							<div class="col-md-6">
-							  		<?php //echo "<PRE>";print_r($allCustomerTags);die; 
-							  		$alldata = array();
-							  		for($i=0;$i<count($allCustomerTags);$i++){
-							  			$fruits_ar = array();
-							  			$fruits_ar = explode(',',$allCustomerTags[$i]->customer_tag);
-							  			for($j=0;$j<count($fruits_ar);$j++){
-							  				if(!empty($fruits_ar[$j])){
-							  					array_push($alldata,trim($fruits_ar[$j]));
-							  				}
-							  			}
-							  		}
-							  		$alldata = array_unique($alldata);
-							  		$allFTags = array_values($alldata);
-							  		//echo "<PRE>";print_r(array_values($alldata));die;
-							  		?>
-							  		<table>
-							  			
-							  			<tr>
-							  			<?php $i=1; for($p=0;$p<count($allFTags);$p++){ ?>
-							  				<td><button type="button" class="btn btn-light" onclick="getTotal('<?php echo $allFTags[$p]; ?>');">{{ $allFTags[$p] }}</button></td>
-							  			<?php 
-							  			if($i % 4 == 0) { ?>
-							  			</tr>
-							  			<tr>
-							  		<?php } $i++; } ?>
-							  	</tr>
-							  		</table>              		
-                    		</div>
-                   	 	</div>
-
-				            <figure class="highcharts-figure">
-				                <div id="TCustomer-chart"></div>
-				            </figure>
-				            <figure class="highcharts-figure">
-				                <div id="TDTC-chart"></div>
-				            </figure>
-				            <figure class="highcharts-figure">
-				                <div id="TWholesale-chart"></div>
-				            </figure>
-				            <br/>
-				            <div id="tagsChart"></div>
-			        	
-                	</div>
-            	</div>
-            </div>
-            <div class="tab-pane fade show <?php echo $tab2; ?>" id="responses" role="tabpanel" aria-labelledby="responses-tab">
-                <div class="pt-content ">
-                	<h5>Filter By :</h5> 
-					<form action="{{ Url('/Filter') }}" method="POST">
-						@csrf
-						<div class="row" style="padding-left: 10px;">
-							<label>Customer created date:</label>
-							<div class="col-md-2">
-								<input type="text" class="form-control" name="daterange" id="daterange" />
-								<input type="hidden" name="tab" value="2">
-							</div>
-							<div class="col-md-2">
-								<input class="btn btn-info" type="submit" value="Submit" >
-							</div>
-						</div>
-					</form>
-					
-                	<div class="form-group">
-						<a href="{{ url('/') }}/export/xlsx" class="btn btn-success">Export Data</a>
 					</div>
-                    <table id="example" class="table table-striped table-bordered" >
-						<thead>
-				            <tr>
-				                <th>Customer Name</th>
-				                <th>Address</th>
-				                <th>Phone</th>
-				                <th>Email</th>
-				                <th>Customer created<br/>Date</th>
-				                <th>Avg Order<br/>Amount</th>
-				                <th>Total Orders</th>
-				                 <th>Last Order<br/> Date</th>  
-								
-				            </tr>
-				        </thead>
-				        <tbody>
-				        	<?php for($i=0;$i<count($customerData);$i++){ 
+					<!-- tab content one -->
+					<div class="tab-pane fade show <?php echo $tab2; ?>" id="responses" role="tabpanel" aria-labelledby="responses-tab">
+						<div class="pt-content ">
+							<div class="flex-datae">
+								<div class="filter-date cr-left">
+									<h5>Filter By Date</h5> 
+									<form action="{{ Url('/Filter') }}" method="POST">
+										@csrf
+										<div class="flex-search">
+											<div class="search-control">
+												<input type="text" class="form-control" name="daterange" id="daterange" />
+												<input type="hidden" name="tab" value="2">
+											</div>
+											<div class="button-control">
+												<input class="btn btn-info" type="submit" value="Submit" >
+											</div>
+										</div>
+									</form>
+								</div>
+								<div class="export-data">
+									<a href="{{ url('/') }}/export/xlsx" class="btn btn-success">Export Data</a>
+								</div>
+							</div>
+							<div class="table-re-box">
+								<table id="example" class="table table-striped table-bordered" >
+									<thead>
+										<tr>
+											<th>Customer Name</th>
+											<th>Address</th>
+											<th>Phone</th>
+											<th>Email</th>
+											<th>Customer created<br/>Date</th>
+											<th>Avg Order<br/>Amount</th>
+											<th>Total Orders</th>
+											<th>Last Order<br/> Date</th>  
+											
+										</tr>
+									</thead>
+									<tbody>
+										<?php for($i=0;$i<count($customerData);$i++){ 
 
-				        		
-				        	?>
-					            <tr>
-									<td><?php if(!empty($customerData[$i]->first_name || $customerData[$i]->last_name)) { echo $customerData[$i]->first_name.' '.$customerData[$i]->last_name; } else { echo '-'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->address)) { echo $customerData[$i]->address; } else { echo '-'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->mobileno)) { echo $customerData[$i]->mobileno; } else { echo '-'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->email)) { echo $customerData[$i]->email; } else { echo '-'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->customer_created_at)) { echo date("m/d/Y", strtotime($customerData[$i]->customer_created_at)); } else { echo '-'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->average_amount)) { echo '$'.$customerData[$i]->average_amount; } else { echo '$0'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->total_order)) { echo $customerData[$i]->total_order; } else { echo '-'; } ?></td>
-									<td><?php if(!empty($customerData[$i]->last_order_date)) { echo date("m/d/Y", strtotime($customerData[$i]->last_order_date)); } else { echo'-'; } ?></td>
-								</tr>
-							<?php } ?>
-						</tbody>
-					</table>
-                </div>
-            </div> 
-        </div>	
+											
+										?>
+											<tr>
+												<td><?php if(!empty($customerData[$i]->first_name || $customerData[$i]->last_name)) { echo $customerData[$i]->first_name.' '.$customerData[$i]->last_name; } else { echo '-'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->address)) { echo $customerData[$i]->address; } else { echo '-'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->mobileno)) { echo $customerData[$i]->mobileno; } else { echo '-'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->email)) { echo $customerData[$i]->email; } else { echo '-'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->customer_created_at)) { echo date("m/d/Y", strtotime($customerData[$i]->customer_created_at)); } else { echo '-'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->average_amount)) { echo '$'.$customerData[$i]->average_amount; } else { echo '$0'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->total_order)) { echo $customerData[$i]->total_order; } else { echo '-'; } ?></td>
+												<td><?php if(!empty($customerData[$i]->last_order_date)) { echo date("m/d/Y", strtotime($customerData[$i]->last_order_date)); } else { echo'-'; } ?></td>
+											</tr>
+										<?php } ?>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div> 
+					<!-- tab content two -->
+				</div>
+				<!-- End of Tab Content -->
+			</div>
+		</div>
+		
+		
 	</div>
 </body>
 </html>
@@ -259,7 +305,6 @@ $(document).ready(function() {
 } );
 
 $(function() {
-
 	//$('#daterange').val($('#date').val());
 	  var dS = $('#sdate').val();
 	  var dE = $('#edate').val();
@@ -300,6 +345,9 @@ function showContent(type){
         $('#responses-tab').addClass('active');
     }
 }
+function resetData() {
+	$('.append').remove();
+}
 tagArr = [];
 function getTotal(val){
 	var url = $('#getTotal').val();
@@ -316,15 +364,17 @@ function getTotal(val){
 		        dataType: "JSON",
 		        data: {tags:val,startDate:startDate,endDate:endDate,"_token": "{{ csrf_token() }}"},
 		        success: function (data) {
-		        	$('#addTags').append('<br/><label>Total '+val+': '+data.total+'</label> , <label>Total '+val+' Old : '+data.totalOld+'</label>');
-		        	$('#tagsChart').append('<figure class="highcharts-figure"><div id="'+data.id+'"></div></figure>');	
+		        	$('#addTags').append('<div class="col-xl-3 col-lg-4 col-md-6 col-tagbox append"><div class="tags-view"><h3>Total '+val+'</h3> <div class="tag-preiod"> <span class="old-period"><b>'+data.totalOld+'</b> <small>previous period</small></span> <span class="cc-period"><b>'+data.total+'</b> <small>Current period</small></span></div></div></div>');
+		        	$('#tagsChart').append('<div class="col-xl-6 col-chart append"><figure class="highcharts-figure"><div id="'+data.id+'"></div></figure></div>');
+		        	alert(data.seriesDataCus);	
 		        	startsChart1(data.seriesDataCus,data.tStarts,data.id,val);
 		        }
 		    });
-
 		}
 	}
 }
+
+
 
 function myFunction(){
     var url1 = $('#getMapData').val();
@@ -342,12 +392,9 @@ function myFunction(){
        cache: false,
        success: function(data){ 
        	//alert(data.seriesDataCus);
-
+       	//alert(data.tStarts);
         startsChart(data.seriesDataCus,data.tStarts,data.seriesDataDTC,data.tStartsDTC,data.seriesDataWholesale,data.tStartsWholesale);
-       },
-       error: function() {
-            alert('ajax call failed...');
-        }
+       }
      });             
 }
 
@@ -363,8 +410,8 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
     var prevM = makeDate.getMonth()+1;
 
      var endDate = new Date(edate);
-    makeDateE = new Date(endDate.setMonth(endDate.getMonth() - 1));
-    var prevME = makeDateE.getMonth()+1;
+    makeDateE = new Date(endDate.setMonth(endDate.getMonth()));
+    var prevME = makeDateE.getMonth();
 
     if(prevM == 12){
       sdateArr[2] = sdateArr[2]-1;
@@ -380,8 +427,13 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
         chart: {
           type: 'spline'
         },
+        tooltip: {
+		    shared: true,
+		    split: false,
+		    enabled: true
+		},
         title: {
-          text: 'Number of Customer',
+          text: 'Number of Total Customer',
           align:'left'
         },
         subtitle: {
@@ -405,9 +457,6 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
             min:0,
             max:max1
         },
-        tooltip: {
-            pointFormat: 'Specified Period: {point.y}'
-        },
         credits: {
             enabled: false
         },
@@ -422,6 +471,11 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
         chart: {
           type: 'spline'
         },
+        tooltip: {
+		    shared: true,
+		    split: false,
+		    enabled: true
+		},
         title: {
           text: 'Number of DTC',
           align:'left'
@@ -447,9 +501,6 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
             min:0,
             max:max2
         },
-        tooltip: {
-            pointFormat: 'Specified Period: {point.y}'
-        },
         credits: {
             enabled: false
         },
@@ -464,6 +515,11 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
         chart: {
           type: 'spline'
         },
+        tooltip: {
+		    shared: true,
+		    split: false,
+		    enabled: true
+		},
         title: {
           text: 'Number of Wholesale',
           align:'left'
@@ -489,9 +545,6 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
             min:0,
             max:max3
         },
-        tooltip: {
-            pointFormat: 'Specified Period: {point.y}'
-        },
         credits: {
             enabled: false
         },
@@ -516,7 +569,7 @@ function startsChart1(dataS,max1,id,tag){
 
      var endDate = new Date(edate);
     makeDateE = new Date(endDate.setMonth(endDate.getMonth() - 1));
-    var prevME = makeDateE.getMonth()+1;
+    var prevME = makeDateE.getMonth();
 
     if(prevM == 12){
       sdateArr[2] = sdateArr[2]-1;
@@ -532,6 +585,11 @@ function startsChart1(dataS,max1,id,tag){
         chart: {
           type: 'spline'
         },
+        tooltip: {
+		    shared: true,
+		    split: false,
+		    enabled: true
+		},
         title: {
           text: 'Number of '+tag,
           align:'left'
@@ -556,9 +614,6 @@ function startsChart1(dataS,max1,id,tag){
             },
             min:0,
             max:max1
-        },
-        tooltip: {
-            pointFormat: 'Specified Period: {point.y}'
         },
         credits: {
             enabled: false

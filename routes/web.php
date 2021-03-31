@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 });*/
 //Route::get('/','GetController@index');
 
-Route::get('/','GetController@index');
+Route::get('/','GetController@getCustomer');
 Route::post('/Filter','GetController@getCustomerFilter');
 Route::get('/export/{type}', 'GetController@export');
 Route::post('/getTotalTags', 'GetController@getTotalTags');
