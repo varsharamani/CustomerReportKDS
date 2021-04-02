@@ -157,7 +157,6 @@
 							<div class="button-control">
 								<input class="btn btn-info" type="button" value="Reset" onclick="resetData();">
 							</div>
-							<br/>
 							<div class="tag-box">
 								<div id="addTags" class="row">
 									<div class="col-xl-3 col-lg-4 col-md-6 col-tagbox">
@@ -366,7 +365,7 @@ function getTotal(val){
 		        success: function (data) {
 		        	$('#addTags').append('<div class="col-xl-3 col-lg-4 col-md-6 col-tagbox append"><div class="tags-view"><h3>Total '+val+'</h3> <div class="tag-preiod"> <span class="old-period"><b>'+data.totalOld+'</b> <small>previous period</small></span> <span class="cc-period"><b>'+data.total+'</b> <small>Current period</small></span></div></div></div>');
 		        	$('#tagsChart').append('<div class="col-xl-6 col-chart append"><figure class="highcharts-figure"><div id="'+data.id+'"></div></figure></div>');
-		        	alert(data.seriesDataCus);	
+		        	//alert(seriesDataCus);	
 		        	startsChart1(data.seriesDataCus,data.tStarts,data.id,val);
 		        }
 		    });
@@ -559,7 +558,7 @@ function startsChart(dataS,max1,dataDTC,max2,dataWholesale,max3){
 function startsChart1(dataS,max1,id,tag){
     var sdate = $('#sdate').val();
     var sdateArr = sdate.split("/");
-
+  // alert(dataS);
     var edate = $('#edate').val();
     var edateArr = edate.split("/");
     console.log(sdateArr);
@@ -568,7 +567,7 @@ function startsChart1(dataS,max1,id,tag){
     var prevM = makeDate.getMonth()+1;
 
      var endDate = new Date(edate);
-    makeDateE = new Date(endDate.setMonth(endDate.getMonth() - 1));
+    makeDateE = new Date(endDate.setMonth(endDate.getMonth()));
     var prevME = makeDateE.getMonth();
 
     if(prevM == 12){

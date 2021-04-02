@@ -35,7 +35,8 @@
     }
 }
 
-.filter-tags {
+.filter-tags,
+.button-control {
 	position: relative;
 	margin-bottom: 15px;
 }
@@ -95,7 +96,7 @@
 	color: #5b5b5b;
 	text-align: center;
 	font-weight: bold;
-	opacity: 0.6;
+	/* opacity: 0.6; */
 	min-width: 70px;
 }
 .tag-preiod > span > b {
@@ -115,6 +116,17 @@
 .tags-view span.cc-period {
 	text-align: right;
 }
+
+.tags-view span.old-period,
+.tag-preiod > span.old-period > small{
+	color:#fd7e14;
+}
+
+.tags-view span.cc-period,
+.tag-preiod > span.cc-period > small{
+	color: #007bff;
+}
+
 .tag-box .row {
 	margin-right: -8px;
 	margin-left: -8px;
